@@ -2,7 +2,9 @@ module Tests
 
 open System
 open Program.FunctionalDataStructure
+open Program.Calculator
 open Xunit
+open FsCheck
 open FsCheck.Xunit
 
 [<Property>]
@@ -23,3 +25,14 @@ let ``folding two numbers with addition is the same as adding them`` (a: int, b:
 let ``length of FList is same after map`` (list: FList<string>) =
   let uppercase (x: string) = if x <> null then x.ToUpper() else null
   map uppercase list |> length = (list |> length)
+
+[<Property>]
+let ``calculator works same as built in`` (a: NormalFloat, b: NormalFloat, c: NormalFloat, d: NormalFloat) =
+  let a', b', c', d' = a.Get, b.Get, c.Get, d.Get
+  let cal = Expr(Div,
+              Expr(Add, Value(a'),
+                Expr(Mul, Value(b'),
+                  Expr(Sub, Value(c'), Value(d')))),
+              Value(7.0)) // avoids division by 0
+  let expected = ((a' + (b' * (c' - d'))) / 7.0)
+  eval cal = expected
