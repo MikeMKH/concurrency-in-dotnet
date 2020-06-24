@@ -50,15 +50,15 @@ let ``given primes of 0..top sums to expected`` (top: int, expected: int) =
   Assert.Equal(expected, sequentialSum top)
   
 [<Property>]
-let ``sequential sum and parallel sum give same result`` (t: int) =
-  let top = Math.Abs(t) % 1000
+let ``sequential sum and parallel sum give same result`` (n: int) =
+  let top = Math.Abs(n) % 1000
   let sequential = sequentialSum top
   let parallel = parallelSum top
   Assert.Equal(sequential, parallel)
   
 [<Property>]
-let ``sequential sum and parallel Linq sum give same result`` (t: int) =
-  let top = Math.Abs(t) % 1000
+let ``sequential sum and parallel Linq sum give same result`` (n: int) =
+  let top = Math.Abs(n) % 1000
   let sequential = sequentialSum top
   let parallel = parallelLinqSum top
   Assert.Equal(sequential, parallel)
