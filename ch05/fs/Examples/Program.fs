@@ -10,4 +10,4 @@ module Program
       |> Seq.sortByDescending (fun (_, count) -> count)
       
   let map' (f: 'a -> 'b) col: 'a list =
-    col |> Seq.fold (fun m x -> m @ [f x]) []
+    Seq.fold (fun m x -> m @ [f x]) [] col
