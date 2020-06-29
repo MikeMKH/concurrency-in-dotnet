@@ -48,3 +48,31 @@ let ``prime sum gives expected total`` (boundary: int, expected: int) =
 let ``prime sum gives same value as doing it by hand`` (n: PositiveInt) =
   ((int) n |> primeSum) =  
     (Seq.init ((int) n) (fun x -> x + 1) |> Seq.filter isPrime |> Seq.sum)
+    
+[<Property>]
+let ``int addition has 0 as identity`` (a: int) =
+  a + 0 = a
+
+// [<Property>]
+// let ``addition is closed`` (a: int, b: int) =
+//   match a + b with
+//   | :? System.Int32 -> true  // cannot not be true
+//   | _ -> false
+
+[<Property>]
+let ``int addition is associative`` (a: int, b: int, c: int) =
+  (a + b) + c = a + (b + c)
+    
+[<Property>]
+let ``int multiplication has 1 as identity`` (a: int) =
+  a * 1 = a
+
+// [<Property>]
+// let ``multiplication is closed`` (a: int, b: int) =
+//   match a * b with
+//   | :? System.Int32 -> true  // cannot not be true
+//   | _ -> false
+
+[<Property>]
+let ``int multiplication is associative`` (a: int, b: int, c: int) =
+  (a * b) * c = a * (b * c)
