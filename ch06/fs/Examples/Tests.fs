@@ -4,6 +4,7 @@ open System
 open System.Threading
 open FSharp.Control.Reactive
 open Xunit
+open System.Threading.Tasks
 
 [<Fact>]
 let ``example of Event timer`` () = 
@@ -68,4 +69,14 @@ let ``example of Observable counter`` () =
     |> ignore
   
   Async.RunSynchronously task
+
+[<Fact>]
+let ``monadic binding of a task of 40 plus 2 gives the value 42`` () =
+  let task = async {
+        let! x = async { return 40}
+        return x + 2
+       }
+  let value = task |> Async.RunSynchronously
+  Assert.Equal(42, value)
+  
   
