@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -191,6 +192,43 @@ namespace Examples
             
             Compute(t2, printAndStore);
             Assert.False(was42);
+        }
+        
+        [Fact]
+        public void ExampleWrongParallelTask()
+        {
+            Random random = new Random(7);
+            
+            var valueTasks = 
+              from value in Enumerable.Range(1, 10)
+              select Task.Run(() => calculate(value));
+            
+            foreach(var task in valueTasks)
+            {
+                var value = task.Result;
+                Console.WriteLine(
+                    $"WrongParallelTask: id={Thread.CurrentThread.ManagedThreadId} value={value}");
+            }
+            
+            int calculate(int value) => random.Next() * value;
+        }
+        
+        [Fact]
+        public void ExampleCorrectParallelTask()
+        {
+            ThreadLocal<Random> random = new ThreadLocal<Random>(() => new Random(7));
+            
+            var valueTasks = 
+              (from value in Enumerable.Range(1, 10)
+              select Task.Run(() => calculate(value))).ToList();
+            
+            foreach(var task in valueTasks)
+            {
+                task.ContinueWith(t => Console.WriteLine(
+                    $"CorrectParallelTask: id={Thread.CurrentThread.ManagedThreadId} value={t.Result}"));
+            }
+            
+            int calculate(int value) => random.Value.Next() * value;
         }
     }
 }
