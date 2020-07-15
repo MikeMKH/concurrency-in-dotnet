@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
+using LanguageExt;
+using static LanguageExt.Prelude;
 
 namespace Examples
 {
@@ -229,6 +231,32 @@ namespace Examples
             }
             
             int calculate(int value) => random.Value.Next() * value;
+        }
+        
+        [Fact]
+        public void TestComposibleTaskWithAddition()
+        {
+            var task =
+              from x in Task.Run(() => 42)
+              from y in Task.Run(() => x + 43)
+              select y;
+            
+            Assert.Equal(85, task.Result);
+        }
+        
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        [InlineData(2)]
+        [InlineData(8)]
+        [InlineData(42)]
+        public void TestTaskBindWithAddition(int value)
+        {
+            Func<int, Task<int>> plus2 = x => Task.FromResult(x +2);
+            
+            var task = Task.Run(() => value).Bind(plus2);
+            
+            Assert.Equal(value + 2, task.Result);
         }
     }
 }
