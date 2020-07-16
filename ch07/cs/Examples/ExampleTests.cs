@@ -258,5 +258,35 @@ namespace Examples
             
             Assert.Equal(value + 2, task.Result);
         }
+        
+        [Fact]
+        public async void ExampleTraverseAsync()
+        {
+            // based on https://github.com/louthy/language-ext#transformer-types
+            var start = DateTime.UtcNow;
+            
+            Func<int, int> createTask = n =>
+            {
+                Console.WriteLine($"Traverse: id={Thread.CurrentThread.ManagedThreadId} n={n}");
+                Thread.Sleep(300);
+                return n;    
+            };
+            
+            var t1 = Task.Run(() => createTask(1));
+            var t2 = Task.Run(() => createTask(2));
+            var t3 = Task.Run(() => createTask(3));
+            var t4 = Task.Run(() => createTask(4));
+            var t5 = Task.Run(() => createTask(5));
+            var t6 = Task.Run(() => createTask(6));
+            var t7 = Task.Run(() => createTask(7));
+            
+            var result = await List(t1, t2, t3, t4, t5, t6, t7).Traverse(x => x * 2);
+            Assert.True(toSet(result) == Set(2, 4, 6, 8, 10, 12, 14));
+            
+            var ms = (int)(DateTime.UtcNow - start).TotalMilliseconds;
+            Assert.True(ms < 400, $"Took {ms} ticks");
+            
+            
+        }
     }
 }
