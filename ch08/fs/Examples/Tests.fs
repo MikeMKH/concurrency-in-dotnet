@@ -1,22 +1,16 @@
 module Tests
 
-open System
-open System.IO
-open System.Net
+open Program
 open Xunit
 
 [<Fact>]
 let ``Example of parallel asynchronous computations`` () =
-  let httpAsync (url: string) = async {
-    let req = WebRequest.Create(Uri(url))
-    let! res = req.AsyncGetResponse()
-    use stream = res.GetResponseStream()
-    use reader = new StreamReader(stream)
-    let! text = reader.ReadToEndAsync() |> Async.AwaitTask
-    return text
-  }
-  
-  let sites = [ "http://www.google.com"; "http://www.amazon.com" ]
+  let sites = [
+      "http://www.google.com";          "http://www.amazon.com";
+      "http://www.twitter.com";         "http://boardgamegeek.com";
+      "http://dotnet.microsoft.com";    "http://www.anachronsounds.de";
+      "http://www.github.com";          "http://www.againstme.net";
+   ]
   
   sites
     |> Seq.map httpAsync
