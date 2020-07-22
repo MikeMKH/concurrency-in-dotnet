@@ -9,11 +9,11 @@ namespace Examples
 {
     public class ExampleTests
     {
-        Action<byte[]> test = bytes =>
+        Action<byte[]> test = (bytes) =>
         {
             var len = bytes.Length;
             Console.WriteLine(
-                $"ReadFileBlocking: id={Thread.CurrentThread.ManagedThreadId} read {len} bytes");
+                $"id={Thread.CurrentThread.ManagedThreadId} read {len} bytes");
             Assert.True(bytes.Length > 0);
         };
         
@@ -51,9 +51,9 @@ namespace Examples
         public void ExampleNonBlockingFileRead()
         {
             var testFile = CreateTestFile();   
-            var result = ReadFileNoBlocking(testFile, test);
+            var result = ReadFileNonBlocking(testFile, test);
             
-            IAsyncResult ReadFileNoBlocking(string path, Action<byte[]> process)
+            IAsyncResult ReadFileNonBlocking(string path, Action<byte[]> process)
             {
                 using(var read = new FileStream(
                     path, FileMode.Open, FileAccess.Read, FileShare.Read, 0x1000, FileOptions.Asynchronous))
@@ -69,6 +69,24 @@ namespace Examples
                     var state = result.AsyncState as Tuple<byte[], FileStream, Action<byte[]>>;
                     using(state.Item2) state.Item2.EndRead(result);
                     state.Item3(state.Item1);
+                }
+            }
+        }
+           
+        [Fact]
+        public void ExampleNonBlockingFileReadAsync()
+        {
+            var testFile = CreateTestFile();   
+            ReadFileNonBlockingAsync(testFile, test);
+            
+            async void ReadFileNonBlockingAsync(string path, Action<byte[]> process)
+            {
+                using(var read = new FileStream(
+                    path, FileMode.Open, FileAccess.Read, FileShare.Read, 0x1000, FileOptions.Asynchronous))
+                {
+                    byte[] buffer = new byte[read.Length];
+                    var bytesRead = await read.ReadAsync(buffer, 0, buffer.Length);
+                    await Task.Run(async () => process(buffer));
                 }
             }
         }
