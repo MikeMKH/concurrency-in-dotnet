@@ -9,11 +9,11 @@ namespace Examples
 {
     public class ExampleTests
     {
-        Action<byte[]> test = (bytes) =>
+        Func<string, Action<byte[]>> test = (name) => (bytes) =>
         {
             var len = bytes.Length;
             Console.WriteLine(
-                $"id={Thread.CurrentThread.ManagedThreadId} read {len} bytes");
+                $"{name} id={Thread.CurrentThread.ManagedThreadId} read {len} bytes");
             Assert.True(bytes.Length > 0);
         };
         
@@ -33,7 +33,7 @@ namespace Examples
         public void ExampleBlockingFileRead()
         {
             var testFile = CreateTestFile();   
-            ReadFileBlocking(testFile, test);
+            ReadFileBlocking(testFile, test("ReadFileBlocking"));
             
             void ReadFileBlocking(string path, Action<byte[]> process)
             {
@@ -51,7 +51,7 @@ namespace Examples
         public void ExampleNonBlockingFileRead()
         {
             var testFile = CreateTestFile();   
-            var result = ReadFileNonBlocking(testFile, test);
+            var result = ReadFileNonBlocking(testFile, test("ReadFileNonBlocking"));
             
             IAsyncResult ReadFileNonBlocking(string path, Action<byte[]> process)
             {
@@ -77,7 +77,7 @@ namespace Examples
         public void ExampleNonBlockingFileReadAsync()
         {
             var testFile = CreateTestFile();   
-            ReadFileNonBlockingAsync(testFile, test);
+            ReadFileNonBlockingAsync(testFile, test("ReadFileNonBlockingAsync"));
             
             async void ReadFileNonBlockingAsync(string path, Action<byte[]> process)
             {
