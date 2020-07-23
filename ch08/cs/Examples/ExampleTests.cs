@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -85,10 +86,37 @@ namespace Examples
                     path, FileMode.Open, FileAccess.Read, FileShare.Read, 0x1000, FileOptions.Asynchronous))
                 {
                     byte[] buffer = new byte[read.Length];
-                    var bytesRead = await read.ReadAsync(buffer, 0, buffer.Length);
+                    var bytesRead = await read.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
                     await Task.Run(async () => process(buffer));
                 }
             }
+        }
+        
+        [Fact]
+        public void ExampleCancellationToken()
+        {
+            CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+            CancellationToken token = cancellationTokenSource.Token;
+            
+            Task.Run(async () => 
+            {
+                var client = new WebClient();
+                token.Register(() =>
+                {
+                    print("cancel");
+                    client.CancelAsync();
+                });
+                var data = await client.DownloadDataTaskAsync("www.amazon.com");
+            }, token);
+            
+            print("start");
+            Thread.Sleep(100);
+            cancellationTokenSource.Cancel();
+            print("end");
+            
+            
+            void print(string state) =>
+              Console.WriteLine($"ExampleCancellationToken id={Thread.CurrentThread.ManagedThreadId} state={state}");
         }
     }
 }
