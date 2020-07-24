@@ -92,9 +92,13 @@ namespace Examples
             }
         }
         
+        Func<string, Action<string>> PrintStateMessage = caller =>  state =>
+              Console.WriteLine($"{caller} id={Thread.CurrentThread.ManagedThreadId} state={state}");
+
         [Fact]
         public void ExampleCancellationToken()
         {
+            var print = PrintStateMessage("ExampleCancellationToken");
             CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
             CancellationToken token = cancellationTokenSource.Token;
             
@@ -109,14 +113,33 @@ namespace Examples
                 var data = await client.DownloadDataTaskAsync("www.amazon.com");
             }, token);
             
-            print("start");
+            print("begin");
             Thread.Sleep(100);
             cancellationTokenSource.Cancel();
             print("end");
+        }
+        
+        [Fact]
+        public void ExampleCooperativeCancellationSupport()
+        {
+            var print = PrintStateMessage("ExampleCooperativeCancellationSupport");
+            CancellationTokenSource cts1 = new CancellationTokenSource();
+            CancellationTokenSource cts2 = new CancellationTokenSource();
+            CancellationTokenSource composite = CancellationTokenSource.CreateLinkedTokenSource(
+                cts1.Token, cts2.Token);
             
+            var compositeToken = composite.Token;
             
-            void print(string state) =>
-              Console.WriteLine($"ExampleCancellationToken id={Thread.CurrentThread.ManagedThreadId} state={state}");
+            Task.Run(async () =>
+            {
+               print("start");
+               Thread.Sleep(100);
+               print("finish"); 
+            }, compositeToken);
+            
+            print("before cancel");
+            cts2.Cancel();
+            print("after cancel");
         }
     }
 }
