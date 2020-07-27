@@ -141,5 +141,26 @@ namespace Examples
             cts2.Cancel();
             print("after cancel");
         }
+        
+        [Fact]
+        public async void ExampleDeferAsyncComputation()
+        {
+            Console.WriteLine("Defer: Start of Test");
+            
+            Task<int> eight = Task.Run(() => { Console.WriteLine("Defer: Running Task"); return 8; });
+            Func<Task<int>> defer = async () => await eight;
+            
+            Console.WriteLine("Defer: Before Awaiting Task");
+            var r1 = await eight;
+            
+            Console.WriteLine("Defer: Before Calling Func of Task");
+            var t2 = defer();
+
+            Console.WriteLine("Defer: Before Awaiting Func of Task");
+            var r2 = await t2;
+            Assert.Equal(r1, r2);
+            
+            Console.WriteLine("Defer: End of Test");
+        }
     }
 }
