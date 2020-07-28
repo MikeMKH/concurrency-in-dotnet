@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.IO;
 using System.Net;
 using System.Text;
@@ -161,6 +163,30 @@ namespace Examples
             Assert.Equal(r1, r2);
             
             Console.WriteLine("Defer: End of Test");
+        }
+        
+        [Fact]
+        public async void ExampleProcessingTaskAsTheyCompleteAsync()
+        {
+            int max = 10;
+            var values = Enumerable.Range(1, max);
+            var tasks = values.Select(
+                value => Task.Run(() =>
+                {
+                    Console.WriteLine($"Async Processing id={Thread.CurrentThread.ManagedThreadId}\tvalue={value}");
+                    Thread.Sleep(value * 10);
+                    return value;
+                })).ToList();
+            
+            int sum = 0;
+            while(tasks.Count() > 0)
+            {
+                var task = await Task.WhenAny(tasks);
+                sum += task.Result;
+                tasks.Remove(task);
+            }
+            
+            Assert.Equal(max * (max + 1) / 2, sum);
         }
     }
 }
