@@ -4,3 +4,7 @@ module AsyncExtension
       let! result = operation
       return f result
     }
+    
+  let inline tap (f: 'a->'b) (x: Async<'a>) =
+    map f x |> Async.Ignore |> Async.Start
+    x
