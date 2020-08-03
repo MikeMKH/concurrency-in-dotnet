@@ -1,6 +1,7 @@
 module Tests
 
 open System
+open System.Net
 open AsyncExtension
 open Program
 open Xunit
@@ -57,3 +58,24 @@ let ``LoggerBuilder can be nested`` () =
   }
   
   Assert.Equal(1 + 2 + 3, result)
+
+let computation() = async {
+  use client = new WebClient()
+  let! site = client.AsyncDownloadString(Uri("http://www.thatconference.com/"))
+  return site
+}
+
+[<Fact>]
+let ``Async.StartWithContinuations example`` () =  
+  Async.StartWithContinuations(
+    computation(),
+    (fun site -> printfn "StartWithContinuations size=%i" site.Length; Assert.True(site.Length > 0)),
+    (fun ex -> printfn "Error with StartWithContinuations %s" <| ex.ToString()),
+    (fun c -> printfn "Cancel of StartWithContinuations %s" <| c.ToString()))
+    
+[<Fact>]
+let ``Async.Ignore example`` () =
+  Async.Ignore(
+    computation()
+    |> tap (fun site -> printfn "Ignore size=%i" site.Length)
+    |> tap (fun site -> Assert.True(site.Length > 0)))
