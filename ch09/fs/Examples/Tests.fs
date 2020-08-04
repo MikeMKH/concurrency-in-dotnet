@@ -1,6 +1,8 @@
 module Tests
 
 open System
+open System.Threading
+open System.Threading.Tasks
 open System.Net
 open AsyncExtension
 open Program
@@ -60,8 +62,9 @@ let ``LoggerBuilder can be nested`` () =
   Assert.Equal(1 + 2 + 3, result)
 
 let computation() = async {
+  let url = "http://www.thatconference.com/"
   use client = new WebClient()
-  let! site = client.AsyncDownloadString(Uri("http://www.thatconference.com/"))
+  let! site = client.AsyncDownloadString(Uri(url))
   return site
 }
 
@@ -79,3 +82,16 @@ let ``Async.Ignore example`` () =
     computation()
     |> tap (fun site -> printfn "Ignore size=%i" site.Length)
     |> tap (fun site -> Assert.True(site.Length > 0)))
+
+[<Fact>]
+let ``Async.Start uses CancellationTokenSource`` () =
+  let tokenSource = new CancellationTokenSource()
+  let mutable cancel = true
+  let compute = async {
+    Task.Delay(100)
+    cancel <- false
+    return 8
+  }
+  Async.Start(compute |> Async.Ignore, tokenSource.Token)
+  tokenSource.Cancel()
+  Assert.True(cancel)
