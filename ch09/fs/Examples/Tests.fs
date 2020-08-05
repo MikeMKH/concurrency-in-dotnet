@@ -60,6 +60,28 @@ let ``LoggerBuilder can be nested`` () =
   }
   
   Assert.Equal(1 + 2 + 3, result)
+  
+[<Fact>]
+let ``LoggerBuilder can be deeply nested`` () =
+  let one = MonadicLoggerBuilder "1 Logger"
+  let two = MonadicLoggerBuilder "2 Logger"
+  let three = MonadicLoggerBuilder "3 Logger"
+  let result = one {
+    let! x = async { return 1 }
+    let! (y, z) = two {
+      let! a = async { return 2 }
+      let! b = three {
+        return async { return 3 }
+      }
+      return (a, a |> map((+) (b |> Async.RunSynchronously)))
+    }
+    return
+      x
+      |> map((+) (y |> Async.RunSynchronously))
+      |> map((+) (z |> Async.RunSynchronously))
+  }
+  
+  Assert.Equal(1 + 2 + 2 + 3, result |> Async.RunSynchronously)
 
 let computation() = async {
   let url = "http://www.thatconference.com/"
