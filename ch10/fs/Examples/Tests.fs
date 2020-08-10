@@ -55,3 +55,19 @@ let ``given an even value complexFunction returns value`` (even: int) =
 let ``given an odd value complexFunction returns None`` (odd: int) =
   let result = complexFunction(odd) |> Async.RunSynchronously
   Assert.Equal(None, result)
+  
+[<Fact>]
+let ``Async.Catch example with Choice1Of2`` () =
+  let f = Async.Catch (async { return 1 })
+
+  match f |> Async.RunSynchronously with
+  | Choice1Of2 _ -> Assert.True(true)
+  | Choice2Of2 _ -> Assert.True(false, "wrong result, it should not fail")
+  
+[<Fact>]
+let ``Async.Catch example with Choice2Of2`` () =
+  let f = Async.Catch (async { failwith "two" })
+
+  match f |> Async.RunSynchronously with
+  | Choice1Of2 _ -> Assert.True(false, "wrong result, it should fail")
+  | Choice2Of2 _ -> Assert.True(true)
