@@ -71,3 +71,22 @@ let ``Async.Catch example with Choice2Of2`` () =
   match f |> Async.RunSynchronously with
   | Choice1Of2 _ -> Assert.True(false, "wrong result, it should fail")
   | Choice2Of2 _ -> Assert.True(true)
+  
+[<Fact>]
+let ``Async.Catch end-to-end example`` () =
+  let evenFail x = if x % 2 = 0 then failwith "even" else x
+  let inc = (+) 1
+  let printx = printf "Async.Catch: x=%i\n"
+  
+  let f = async { return 1 }
+  let result =
+    f
+    |> tap printx
+    |> map inc
+    |> tap printx
+    |> map evenFail
+    |> Async.Catch
+    
+  match result |> Async.RunSynchronously with
+  | Choice1Of2 _ -> Assert.True(false, "should fail")
+  | Choice2Of2 _ -> Assert.True(true)
