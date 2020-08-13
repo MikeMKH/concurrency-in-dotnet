@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -96,5 +97,22 @@ namespace Examples
             Assert.Equal(value.ToString(), result);
         }
         
+        public int SumString(string s) =>
+          (from letters in s select (int) letters).Sum();
+          
+        [Theory]
+        [InlineData("", 0)]
+        [InlineData(" ", 32)]
+        [InlineData("a", 97)]
+        [InlineData("A", 65)]
+        [InlineData("AA", 65 * 2)]
+        [InlineData("AA", 'A' + 'A')]
+        [InlineData("Hello World", 72 + 101 + 108 + 108 + 111 + 32 + 87 + 111 + 114 + 108 + 100)]
+        [InlineData("Hello World", 'H' + 'e' + 'l' + 'l' + 'o' + ' ' + 'W' + 'o' + 'r' + 'l' + 'd')]
+        public void GivenStringMustSumToExpectedAmount(string str, int expected)
+        {
+            var actual = SumString(str);
+            Assert.Equal(expected, actual);
+        }
     }
 }
