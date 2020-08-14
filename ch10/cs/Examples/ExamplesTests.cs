@@ -116,5 +116,38 @@ namespace Examples
             var actual = SumString(str);
             Assert.Equal(expected, actual);
         }
+        
+        [Fact]
+        public void OptionalMonadExample()
+        {
+            // example from https://github.com/louthy/language-ext
+            Option<int> two = Some(2);
+            Option<int> four = Some(4);
+            Option<int> eight = Some(8);
+            Option<int> none = None;
+            
+            int ok = match (
+                from x in two
+                from y in four
+                from z in eight
+                select x + y + z,
+                Some: r => r * 2,
+                None: () => 0
+            );
+            
+            Assert.Equal((2 + 4 + 8) * 2, ok);
+            
+            int problem = match (
+                from x in two
+                from y in four
+                from _ in none
+                from z in eight
+                select x + y + z,
+                Some: r => r * 2,
+                None: () => 0
+            );
+            
+            Assert.Equal(0, problem);
+        }
     }
 }
