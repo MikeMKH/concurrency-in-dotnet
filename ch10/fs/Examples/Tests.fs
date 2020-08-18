@@ -3,6 +3,7 @@ module Tests
 open System
 open Xunit
 open Program
+open OptionExt
 
 // based on https://fsharpforfunandprofit.com/posts/exceptions/
 
@@ -90,3 +91,13 @@ let ``Async.Catch end-to-end example`` () =
   match result |> Async.RunSynchronously with
   | Choice1Of2 _ -> Assert.True(false, "should fail")
   | Choice2Of2 _ -> Assert.True(true)
+  
+[<Fact>]
+let ``apply applicative functor example`` () =
+  let result = Some (+) <*> Some 1 <*> Some 2
+  Assert.Equal(Some (1 + 2), result)
+  
+[<Fact>]
+let ``applicative functor example`` () =
+  let result = (+) <!> Some 1 <*> Some 2
+  Assert.Equal(Some (1 + 2), result)
