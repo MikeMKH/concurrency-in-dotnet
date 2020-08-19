@@ -2,7 +2,7 @@ module Tests
 
 open System
 open Xunit
-open Program
+open AsyncExt
 open OptionExt
 
 // based on https://fsharpforfunandprofit.com/posts/exceptions/
@@ -82,10 +82,10 @@ let ``Async.Catch end-to-end example`` () =
   let f = async { return 1 }
   let result =
     f
-    |> tap printx
-    |> map inc
-    |> tap printx
-    |> map evenFail
+    |> AsyncExt.tap printx
+    |> AsyncExt.map inc
+    |> AsyncExt.tap printx
+    |> AsyncExt.map evenFail
     |> Async.Catch
     
   match result |> Async.RunSynchronously with
@@ -93,11 +93,11 @@ let ``Async.Catch end-to-end example`` () =
   | Choice2Of2 _ -> Assert.True(true)
   
 [<Fact>]
-let ``apply applicative functor example`` () =
+let ``apply applicative functor Option type example`` () =
   let result = Some (+) <*> Some 1 <*> Some 2
   Assert.Equal(Some (1 + 2), result)
   
 [<Fact>]
-let ``applicative functor example`` () =
+let ``applicative functor Option type example`` () =
   let result = (+) <!> Some 1 <*> Some 2
   Assert.Equal(Some (1 + 2), result)

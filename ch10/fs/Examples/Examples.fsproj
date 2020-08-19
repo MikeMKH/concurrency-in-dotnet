@@ -3,7 +3,7 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Program.fs" />
+    <Compile Include="AsyncExt.fs" />
     <Compile Include="OptionExt.fs" />
     <Compile Include="Tests.fs" />
   </ItemGroup>
