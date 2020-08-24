@@ -4,6 +4,15 @@ open System
 open System.Threading
 open Xunit
 
+type NameMessage =
+  | Name of string
+  | Relay of AsyncReplyChannel<string>
+  | Stop
+
+type CountMessage =
+  | Increment of int
+  | Sum of AsyncReplyChannel<int>
+
 [<Fact>]
 let ``MailboxProcessor i/o example`` () =
   let mutable spy = 0
@@ -44,11 +53,6 @@ let ``MailboxProcessor state example`` () =
   postAndWait agent 22
   Assert.Equal(42, spy)
 
-type message =
-  | Name of string
-  | Relay of AsyncReplyChannel<string>
-  | Stop
-
 [<Fact>]
 let ``MailboxProcessor post and reply example`` () =
   let greeter = MailboxProcessor.Start(fun inbox -> async {
@@ -63,14 +67,41 @@ let ``MailboxProcessor post and reply example`` () =
   
   let mutable spy = ""
   
-  spy <- greeter.PostAndReply(fun channel -> Relay channel)
+  spy <- greeter.PostAndReply Relay
   Assert.Equal("Hello no man!", spy)
   
-  greeter.Post (Name "Mike")
-  spy <- greeter.PostAndReply(fun channel -> Relay channel)
+  Name "Mike" |> greeter.Post
+  spy <- greeter.PostAndReply Relay
   Assert.Equal("Hello Mike!", spy)
   
-  greeter.Post (Name "Mike")
-  greeter.Post (Name "Kelsey")
-  spy <- greeter.PostAndReply(fun channel -> Relay channel)
+  Name "Mike" |> greeter.Post
+  Name "Kelsey" |> greeter.Post
+  spy <- greeter.PostAndReply Relay
   Assert.Equal("Hello Kelsey!", spy)
+  
+  greeter.Post Stop
+  
+[<Fact>]
+let ``MailboxProcessor post and reply recursive loop example`` () =
+  let counter = MailboxProcessor.Start(fun inbox ->
+    let rec loop sum = async {
+      let! message = inbox.Receive()
+      match message with
+      | Increment x -> return! sum + x |> loop
+      | Sum(reply) -> reply.Reply(sum); return! loop sum
+    }
+    loop 0
+  )
+  
+  Assert.Equal(0, counter.PostAndReply Sum)
+  Assert.Equal(0, counter.PostAndReply Sum)
+  
+  Increment 8 |> counter.Post
+  Assert.Equal(8, counter.PostAndReply Sum)
+  Assert.Equal(8, counter.PostAndReply Sum)
+  
+  Increment 7 |> counter.Post
+  Assert.Equal(15, counter.PostAndReply Sum)
+  
+  Increment 11 |> counter.Post
+  Assert.Equal(26, counter.PostAndReply Sum)
