@@ -15,6 +15,9 @@ type CountMessage =
   
 type EchoMessage<'a> =
   | Echo of 'a * AsyncReplyChannel<'a>
+  
+type FizzBuzzMessage =
+  | TestFizzBuzzer of int * AsyncReplyChannel<string option>
 
 [<Fact>]
 let ``MailboxProcessor i/o example`` () =
@@ -122,4 +125,24 @@ let ``EchoMessage can post and reply in same call`` () =
   
   Assert.Equal("Hello world", echo.PostAndReply(fun channel -> Echo("Hello world", channel)))
   Assert.Equal("echo", echo.PostAndReply(fun channel -> Echo("echo", channel)))
+  
+[<Fact>]
+let ``FizzBuzzMessage can post and reply with Optional type`` () =
+  let fizzer = MailboxProcessor.Start(fun inbox ->
+    let rec loop = async {
+      let! TestFizzBuzzer(value, reply) = inbox.Receive()
+      match value % 3 = 0 with
+      | true -> reply.Reply(Some("fizz"))
+      | false -> reply.Reply(None)
+      return! loop
+    }
+    loop
+  )
+  
+  Assert.Equal(Some("fizz"), fizzer.PostAndReply(fun channel -> TestFizzBuzzer(0, channel)))
+  Assert.Equal(Some("fizz"), fizzer.PostAndReply(fun channel -> TestFizzBuzzer(3, channel)))
+  Assert.Equal(Some("fizz"), fizzer.PostAndReply(fun channel -> TestFizzBuzzer(9, channel)))
+  Assert.Equal(Some("fizz"), fizzer.PostAndReply(fun channel -> TestFizzBuzzer(15, channel)))
+  Assert.Equal(None, fizzer.PostAndReply(fun channel -> TestFizzBuzzer(2, channel)))
+  Assert.Equal(None, fizzer.PostAndReply(fun channel -> TestFizzBuzzer(5, channel)))
   
