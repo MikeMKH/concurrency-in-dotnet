@@ -12,6 +12,9 @@ type NameMessage =
 type CountMessage =
   | Increment of int
   | Sum of AsyncReplyChannel<int>
+  
+type EchoMessage<'a> =
+  | Echo of 'a * AsyncReplyChannel<'a>
 
 [<Fact>]
 let ``MailboxProcessor i/o example`` () =
@@ -105,3 +108,18 @@ let ``MailboxProcessor post and reply recursive loop example`` () =
   
   Increment 11 |> counter.Post
   Assert.Equal(26, counter.PostAndReply Sum)
+  
+[<Fact>]
+let ``EchoMessage can post and reply in same call`` () =
+  let echo = MailboxProcessor.Start(fun inbox ->
+    let rec loop = async {
+      let! Echo(value, reply) = inbox.Receive()
+      reply.Reply(value)
+      return! loop
+    }
+    loop
+  )
+  
+  Assert.Equal("Hello world", echo.PostAndReply(fun channel -> Echo("Hello world", channel)))
+  Assert.Equal("echo", echo.PostAndReply(fun channel -> Echo("echo", channel)))
+  
