@@ -1,6 +1,7 @@
 module Tests
 
 open System
+open System.Collections.Generic
 open System.Threading
 open Xunit
 
@@ -145,4 +146,32 @@ let ``FizzBuzzMessage can post and reply with Optional type`` () =
   Assert.Equal(Some("fizz"), fizzer.PostAndReply(fun channel -> TestFizzBuzzer(15, channel)))
   Assert.Equal(None, fizzer.PostAndReply(fun channel -> TestFizzBuzzer(2, channel)))
   Assert.Equal(None, fizzer.PostAndReply(fun channel -> TestFizzBuzzer(5, channel)))
+
+[<Fact>]
+let ``MailboxProcessor with cache example`` () =
+  let mutable spy = 0
+  let agent = MailboxProcessor.Start(fun inbox ->
+    let rec loop (cache: Dictionary<int, int>) = async {
+      let! (value, (reply: AsyncReplyChannel<int>)) = inbox.Receive()
+      match cache.TryGetValue(value) with
+      | true, result ->  reply.Reply(result)
+      | _ ->
+        let result = value / 2
+        cache.Add(value, result); spy <- spy + 1
+        reply.Reply(result)
+      return! loop cache
+    }
+    let cache = Dictionary<int, int>()
+    loop cache
+  )
   
+  Assert.Equal(0, spy)
+  Assert.Equal(8 / 2, agent.PostAndReply(fun channel -> (8, channel)))
+  Assert.Equal(1, spy)
+  Assert.Equal(8 / 2, agent.PostAndReply(fun channel -> (8, channel)))
+  Assert.Equal(1, spy)
+  Assert.Equal(22 / 2, agent.PostAndReply(fun channel -> (22, channel)))
+  Assert.Equal(2, spy)
+  Assert.Equal(8 / 2, agent.PostAndReply(fun channel -> (8, channel)))
+  Assert.Equal(22 / 2, agent.PostAndReply(fun channel -> (22, channel)))
+  Assert.Equal(2, spy)
