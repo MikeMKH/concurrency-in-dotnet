@@ -175,3 +175,41 @@ let ``MailboxProcessor with cache example`` () =
   Assert.Equal(8 / 2, agent.PostAndReply(fun channel -> (8, channel)))
   Assert.Equal(22 / 2, agent.PostAndReply(fun channel -> (22, channel)))
   Assert.Equal(2, spy)
+  
+[<Fact>]
+let ``MailboxProcessor with interconnection example`` () =
+  let createAgent divisor (result: string) = MailboxProcessor.Start(fun inbox ->
+    let rec loop = async {
+      let! (value, (reply: AsyncReplyChannel<string option>)) = inbox.Receive()
+      match value % divisor = 0 with
+      | true -> reply.Reply(Some result)
+      | false -> reply.Reply None
+      return! loop
+    }
+    loop
+  )
+  
+  let fizzbuzzer = MailboxProcessor.Start(fun inbox ->
+    let fizzer = createAgent 3 "fizz"
+    let buzzer = createAgent 5 "buzz"
+    let rec loop = async {
+      let! (value, (reply: AsyncReplyChannel<string>)) = inbox.Receive()
+      match (fizzer.PostAndReply(fun ch -> (value, ch)),
+             buzzer.PostAndReply(fun ch -> (value, ch))) with
+      | (Some(x), Some(y)) -> reply.Reply(x + y)
+      | (None, Some(y)) -> reply.Reply(y)
+      | (Some(x), None) -> reply.Reply(x)
+      | (None, None) -> reply.Reply(value.ToString())
+      return! loop
+    }
+    loop
+  )
+  
+  Assert.Equal("fizz", fizzbuzzer.PostAndReply(fun ch -> (3, ch)))
+  Assert.Equal("fizz", fizzbuzzer.PostAndReply(fun ch -> (33, ch)))
+  Assert.Equal("buzz", fizzbuzzer.PostAndReply(fun ch -> (5, ch)))
+  Assert.Equal("buzz", fizzbuzzer.PostAndReply(fun ch -> (55, ch)))
+  Assert.Equal("fizzbuzz", fizzbuzzer.PostAndReply(fun ch -> (15, ch)))
+  Assert.Equal("fizzbuzz", fizzbuzzer.PostAndReply(fun ch -> (45, ch)))
+  Assert.Equal("2", fizzbuzzer.PostAndReply(fun ch -> (2, ch)))
+  Assert.Equal("22", fizzbuzzer.PostAndReply(fun ch -> (22, ch)))
