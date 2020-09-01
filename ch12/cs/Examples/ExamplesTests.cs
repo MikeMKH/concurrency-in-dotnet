@@ -86,5 +86,48 @@ namespace Examples
             
             Assert.DoesNotContain(false, results);
         }
+        
+        [Fact]
+        public async void ExampleMultipleProducersAsync()
+        {
+            BufferBlock<int> buffer = new BufferBlock<int>(
+                new DataflowBlockOptions { BoundedCapacity = 10 }
+            );
+            
+            int sum = 0;
+            
+            int UP_TO = 20;
+            IEnumerable<int> values = Enumerable.Range(0, UP_TO);
+            
+            Console.WriteLine($"MultipleProducers: processors={Environment.ProcessorCount}");
+            await Task.WhenAll(
+                MultipleProducers(values, values, values),
+                Consumer(
+                    n => {
+                        sum += n; // would not work with lots of threads
+                        Console.WriteLine(
+                        $"MultipleProducers: n={n} thread={Thread.CurrentThread.ManagedThreadId}");
+                    })
+            );
+            
+            Assert.Equal(((UP_TO * (UP_TO - 1)) / 2) * 3, sum);
+            
+            async Task Produce(IEnumerable<int> values)
+            {
+                foreach(var value in values)
+                  await buffer.SendAsync(value);
+            }
+            
+            async Task MultipleProducers(params IEnumerable<int> [] producers)
+              => await Task.WhenAll(
+                  (from producer in producers select Produce(producer)).ToArray())
+                  .ContinueWith(_ => buffer.Complete());
+            
+            async Task Consumer(Action<int> process)
+            {
+                while(await buffer.OutputAvailableAsync())
+                  process(await buffer.ReceiveAsync());
+            }
+        }
     }
 }
