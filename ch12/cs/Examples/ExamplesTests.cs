@@ -8,6 +8,37 @@ using Xunit;
 
 namespace Examples
 {
+    interface IAgent<TMessage>
+    {
+        Task Send(TMessage message);
+        void Post(TMessage message);
+    }
+    
+    class StatefulAgent<TState, TMessage> : IAgent<TMessage>
+    {
+        private TState state;
+        private readonly ActionBlock<TMessage> actionBlock;
+        
+        public StatefulAgent(
+            TState initialState, Func<TState, TMessage, Task<TState>> action, CancellationToken? token = null)
+        {
+            state = initialState;
+            var options = new ExecutionDataflowBlockOptions { 
+                CancellationToken = token.HasValue ? token.Value : CancellationToken.None };
+            actionBlock = new ActionBlock<TMessage>(
+                async message => state = await action(state, message), options);
+        }
+        
+        public Task Send(TMessage message) => actionBlock.SendAsync(message);
+        public void Post(TMessage message) => actionBlock.Post(message);
+        public TState Result()
+        {
+            actionBlock.Complete();
+            actionBlock.Completion.Wait();
+            return state;
+        }
+    }
+    
     public class ExamplesTests
     {
         [Fact]
@@ -128,6 +159,18 @@ namespace Examples
                 while(await buffer.OutputAvailableAsync())
                   process(await buffer.ReceiveAsync());
             }
+        }
+        
+        [Fact]
+        public void ExampleStatefulAgentUsedToKeepSum()
+        {
+            var agent = new StatefulAgent<int, int>(0, (m, n) => Task.Run(() => m + n));
+            
+            agent.Post(1);
+            agent.Send(2);
+            agent.Post(3);
+            
+            Assert.Equal(6, agent.Result());
         }
     }
 }
