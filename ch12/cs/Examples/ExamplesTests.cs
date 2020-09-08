@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -171,6 +172,33 @@ namespace Examples
             agent.Post(3);
             
             Assert.Equal(6, agent.Result());
+        }
+        
+        [Fact]
+        public void ExampleStatefulAgentUsedToWordCount()
+        {
+            var agent = new StatefulAgent<ImmutableDictionary<string, int>, string>(
+                ImmutableDictionary<string, int>.Empty,
+                async (m, w) => {
+                    var word = w.ToLower();
+                    if(m.TryGetValue(word, out int count))
+                      return m.SetItem(word, count + 1);
+                    
+                    return m.Add(word, 1);
+                }
+            );
+            
+            agent.Post("hello");
+            agent.Post("world");
+            agent.Post("Hello");
+            agent.Post("HELLO");
+            agent.Post("worlD");
+            
+            var counts = agent.Result();
+            Assert.Equal(3, counts["hello"]);
+            Assert.Equal(2, counts["world"]);
+            counts.TryGetValue("not found", out int notFound);
+            Assert.Equal(0, notFound);
         }
     }
 }
