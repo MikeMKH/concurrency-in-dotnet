@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Reactive;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
@@ -199,6 +200,22 @@ namespace Examples
             Assert.Equal(2, counts["world"]);
             counts.TryGetValue("not found", out int notFound);
             Assert.Equal(0, notFound);
+        }
+        
+        [Fact]
+        public void ExampleBlockAsObservable()
+        {
+            var fizz = new TransformBlock<int, string>(
+                async value => value % 3 == 0 ? "Fizz" : "");
+            
+            var assert = fizz.AsObservable().Subscribe(result => Assert.Equal("Fizz", result));
+            fizz.Post(3);
+            fizz.Post(9);
+            fizz.Post(33);
+            
+            fizz.Complete();
+            fizz.Completion.Wait();
+            assert.Dispose();
         }
     }
 }
