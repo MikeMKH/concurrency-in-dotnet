@@ -10,7 +10,9 @@ namespace Examples
     {
         public class Hello
         {
-            public string Value { get => "hello"; }
+            public Hello() => _value = "hello";
+            private string _value;
+            public string Value { get => _value; set => _value = value; }
         }
         
         [Fact]
@@ -21,7 +23,26 @@ namespace Examples
             var hello = pool.Get();
             var value = hello.Value;
             pool.Return(hello);
-            Assert.Equal("hello", hello.Value);
+            Assert.Equal("hello", value);
+        }
+        
+        [Fact]
+        public void TestObjectPoolReturnsSameObject()
+        {
+            var policy = new DefaultPooledObjectPolicy<Hello>();
+            var pool = new DefaultObjectPool<Hello>(policy);
+            
+            var obj1 = pool.Get();
+            var hello = obj1.Value;
+            obj1.Value = "bye";
+            pool.Return(obj1);
+            
+            var obj2 = pool.Get();
+            var bye = obj2.Value;
+            pool.Return(obj2);
+            
+            Assert.Equal("hello", hello);
+            Assert.Equal("bye", bye);
         }
     }
 }
