@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.ObjectPool;
 using Xunit;
 
@@ -43,6 +45,38 @@ namespace Examples
             
             Assert.Equal("hello", hello);
             Assert.Equal("bye", bye);
+        }
+        
+        [Fact]
+        public void ExampleThreadSafeRandom()
+        {
+            var random = new ThreadSafeRandom();
+            string [] clips = new string[] { "1.mp3", "2.mp3", "3.mp3" };
+            
+            Parallel.For(0, 1000, (n) =>
+            {
+                var index = random.Next(3);
+                var clip = clips[index];
+                Console.WriteLine($"ThreadSafeRandom: clip={clip} thread={Thread.CurrentThread.ManagedThreadId}");
+            });
+            
+            Assert.True(random.Next(3) <= 3);
+        }
+        
+        [Theory]
+        [InlineData(1, 1)]
+        [InlineData(-1, 1)]
+        [InlineData(0, 0)]
+        [InlineData(100, 101)]
+        [InlineData(0, 100)]
+        [InlineData(22, 23)]
+        [InlineData(2929, 29399)]
+        public void GivenMinMaxThreadSafeRandomShouldReturnValueBetweenMinMax(int min, int max)
+        {
+            var random = new ThreadSafeRandom();
+            var value = random.Next(min, max);
+            Assert.True(value >= min);
+            Assert.True(value <= max);
         }
     }
 }
