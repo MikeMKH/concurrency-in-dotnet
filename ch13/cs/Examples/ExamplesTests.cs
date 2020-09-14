@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Reactive;
+using System.Reactive.Concurrency;
+using System.Reactive.Linq;
 using Microsoft.Extensions.ObjectPool;
 using Xunit;
 
@@ -52,8 +55,9 @@ namespace Examples
         {
             var random = new ThreadSafeRandom();
             string [] clips = new string[] { "1.mp3", "2.mp3", "3.mp3" };
+            int times = 5; //1000;
             
-            Parallel.For(0, 1000, (n) =>
+            Parallel.For(0, times, (n) =>
             {
                 var index = random.Next(3);
                 var clip = clips[index];
@@ -77,6 +81,22 @@ namespace Examples
             var value = random.Next(min, max);
             Assert.True(value >= min);
             Assert.True(value <= max);
+        }
+        
+        [Fact]
+        public void ExampleReactiveExtensionScheduler()
+        {
+            var sum = 0;
+            var values = new List<int> { 1, 2, 8, 42, 55, 113 };
+            var source = values.ToObservable(ImmediateScheduler.Instance);
+            source.Subscribe(
+                data => {
+                    sum += data;
+                    Console.WriteLine(
+                        $"ImmediateScheduler: value={data} thread={Thread.CurrentThread.ManagedThreadId} background={Thread.CurrentThread.IsBackground}");
+                });
+            
+            Assert.Equal(values.Sum(), sum);
         }
     }
 }
