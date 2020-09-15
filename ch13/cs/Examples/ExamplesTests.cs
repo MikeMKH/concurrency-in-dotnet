@@ -8,6 +8,7 @@ using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using Microsoft.Extensions.ObjectPool;
 using Xunit;
+using ParallelFilterMapEx;
 
 namespace Examples
 {
@@ -97,6 +98,14 @@ namespace Examples
                 });
             
             Assert.Equal(values.Sum(), sum);
+        }
+        
+        [Fact]
+        public void ExampleParallelFilterMap()
+        {
+            IList<int> values = new List<int>() { 1, 2, 3, 4, 5 };
+            var actual = values.ParallelFilterMap(x => x % 2 == 0, x => x + 1);
+            // Assert.Equal(new [] {3, 5}, actual);
         }
     }
 }
