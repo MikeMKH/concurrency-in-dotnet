@@ -1,6 +1,5 @@
 using System;
 using System.Collections;
-using System.Collections.Immutable;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -10,11 +9,11 @@ namespace ParallelFilterMapEx
 {
   public static class ParallelFilterMapExtension
   {
-    public static TOuput[] ParallelFilterMap<TInput, TOuput>(this IList<TInput> input,
-      Predicate<TInput> predicate, Func<TInput, TOuput> transform, ParallelOptions options = null)
+    public static IList<TOuput> ParallelFilterMap<TInput, TOuput>(this IList<TInput> input,
+      Func<TInput, bool> predicate, Func<TInput, TOuput> transform, ParallelOptions options = null)
     {
       options = options ?? new ParallelOptions();
-      var results = ImmutableList<List<TOuput>>.Empty;
+      var syncResults = ArrayList.Synchronized(new List<IList<TOuput>>());
       
       Parallel.ForEach(
         input,
@@ -30,10 +29,17 @@ namespace ParallelFilterMapEx
             
             return local;
           },
-          local => results.Add(local)
+          local => syncResults.Add(local)
         );
         
-        return results.SelectMany(x => x).ToArray();
+        var results = new List<IList<TOuput>>();
+        lock(syncResults.SyncRoot)
+        {
+          foreach(var r in syncResults)
+            results.Add(r as IList<TOuput>);
+        }
+        
+        return  results.SelectMany(x => x).ToList();
     }
   }
 }

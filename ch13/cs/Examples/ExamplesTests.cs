@@ -103,9 +103,11 @@ namespace Examples
         [Fact]
         public void ExampleParallelFilterMap()
         {
-            IList<int> values = new List<int>() { 1, 2, 3, 4, 5 };
-            var actual = values.ParallelFilterMap(x => x % 2 == 0, x => x + 1);
-            // Assert.Equal(new [] {3, 5}, actual);
+            IList<int> values = Enumerable.Range(1, 1000).ToList();
+            Func<int, bool> isEven = x => x % 2 == 0;
+            Func<int, int> increment = x => x + 1;
+            var actual = values.ParallelFilterMap(isEven, increment);
+            Assert.Equal(values.Where(isEven).Select(increment), actual.OrderBy(x => x));
         }
     }
 }
