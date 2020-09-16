@@ -103,7 +103,7 @@ namespace Examples
         [Fact]
         public void ExampleParallelFilterMap()
         {
-            IList<int> values = Enumerable.Range(1, 1000).ToList();
+            IList<int> values = Enumerable.Range(1, 1_000_000).ToList();
             Func<int, bool> isEven = x => x % 2 == 0;
             Func<int, int> increment = x => x + 1;
             
