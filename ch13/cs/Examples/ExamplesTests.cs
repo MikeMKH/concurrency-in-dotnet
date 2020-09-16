@@ -106,7 +106,9 @@ namespace Examples
             IList<int> values = Enumerable.Range(1, 1000).ToList();
             Func<int, bool> isEven = x => x % 2 == 0;
             Func<int, int> increment = x => x + 1;
+            
             var actual = values.ParallelFilterMap(isEven, increment);
+            
             Assert.Equal(values.Where(isEven).Select(increment), actual.OrderBy(x => x));
         }
     }
