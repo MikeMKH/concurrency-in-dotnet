@@ -1,6 +1,5 @@
 module Tests
 
-open System
 open Xunit
 
 let bind (operation: 'a->Async<'b>) (x: Async<'a>) =
